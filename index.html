@@ -1,0 +1,2285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal Dashboard</title>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-card: #242424;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a0a0a0;
+            --border-color: #3d3d3d;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 0;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        .theme-toggle {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.3rem;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(15deg) scale(1.1);
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .widget {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .widget:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .widget::after {
+            content: '→';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .widget:hover::after {
+            opacity: 1;
+        }
+
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .widget-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .widget-icon {
+            font-size: 1.5rem;
+        }
+
+        .widget-content {
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+        }
+
+        .error {
+            color: var(--danger-color);
+            padding: 10px;
+            background-color: rgba(239, 68, 68, 0.1);
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        /* Stats & Data Display */
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .price-up {
+            color: var(--success-color);
+        }
+
+        .price-down {
+            color: var(--danger-color);
+        }
+
+        /* News Items */
+        .news-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .news-item:last-child {
+            border-bottom: none;
+        }
+
+        .news-title {
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+
+        .news-title a {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .news-title a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        .news-meta {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Match Score */
+        .match-card {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+
+        .match-header {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .match-teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .team {
+            flex: 1;
+            text-align: center;
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .score {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .vs {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Settings Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .close-btn:hover {
+            color: var(--danger-color);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /* Last Updated */
+        .last-updated {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding: 20px;
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        /* Detail View */
+        .detail-view {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-primary);
+            z-index: 999;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        .detail-view.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .detail-header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: var(--shadow);
+        }
+
+        .detail-header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background-color: var(--border-color);
+            transform: translateX(-5px);
+        }
+
+        .detail-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .detail-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .detail-item {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .detail-item:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .detail-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .detail-item-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        .detail-item-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .detail-item-link:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        .detail-item-meta {
+            display: flex;
+            gap: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .meta-badge {
+            background-color: var(--bg-secondary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .detail-item-summary {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        .detail-item-content {
+            color: var(--text-primary);
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .article-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--accent-color), var(--success-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+        }
+
+        .standings-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .standings-table th {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .standings-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .standings-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .standings-table tr:hover {
+            background-color: var(--bg-card);
+        }
+
+        .team-highlight {
+            background-color: rgba(59, 130, 246, 0.1);
+            font-weight: 600;
+        }
+
+        .fixture-card {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .fixture-teams {
+            flex: 1;
+        }
+
+        .fixture-team {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .fixture-vs {
+            color: var(--text-secondary);
+            margin: 0 10px;
+        }
+
+        .fixture-time {
+            text-align: right;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background-color: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-box-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .stat-box-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .no-items {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.4rem;
+            }
+
+            .header-content {
+                justify-content: center;
+                text-align: center;
+            }
+
+            .header-controls {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .widget {
+                padding: 15px;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .widget {
+            animation: fadeIn 0.5s ease;
+        }
+
+        .spinner {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>📊 My Personal Dashboard</h1>
+            <div class="header-controls">
+                <button class="btn btn-primary" id="refreshBtn">🔄 Refresh</button>
+                <button class="btn btn-secondary" id="settingsBtn">⚙️ Settings</button>
+                <div class="theme-toggle" id="themeToggle">🌙</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="dashboard-grid" id="dashboardGrid">
+            <!-- Widgets will be dynamically inserted here -->
+        </div>
+
+        <div class="last-updated" id="lastUpdated">
+            Last updated: Never
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">⚙️ Settings</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Your Location (for weather)</label>
+                <input type="text" class="form-input" id="locationInput" placeholder="e.g., Cleveland, OH">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Additional Cryptocurrencies (comma-separated)</label>
+                <input type="text" class="form-input" id="cryptoInput" placeholder="e.g., ethereum, cardano, solana">
+                <small style="color: var(--text-secondary);">Default: Bitcoin, XLM, XRP</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Widgets to Display</label>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="widget-weather" checked>
+                    <label for="widget-weather">Weather</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="widget-soccer" checked>
+                    <label for="widget-soccer">Soccer (Man United & Real Madrid)</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="widget-basketball" checked>
+                    <label for="widget-basketball">Basketball</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="widget-crypto" checked>
+                    <label for="widget-crypto">Cryptocurrency</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="widget-ai" checked>
+                    <label for="widget-ai">AI News</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="widget-pm" checked>
+                    <label for="widget-pm">Project Management & Agile</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="widget-finance" checked>
+                    <label for="widget-finance">Finance & Real Estate</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="widget-news" checked>
+                    <label for="widget-news">Breaking News</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="widget-writing" checked>
+                    <label for="widget-writing">Writing Recommendations</label>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="saveSettings" style="width: 100%;">💾 Save Settings</button>
+        </div>
+    </div>
+
+    <!-- Detail View -->
+    <div class="detail-view" id="detailView">
+        <div class="detail-header">
+            <div class="detail-header-content">
+                <button class="back-btn" id="backBtn">
+                    ← Back to Dashboard
+                </button>
+                <h2 class="detail-title" id="detailViewTitle">
+                    <span id="detailViewIcon"></span>
+                    <span id="detailViewTitleText"></span>
+                </h2>
+            </div>
+        </div>
+        <div class="detail-content" id="detailViewContent">
+            <!-- Detail content will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        const state = {
+            theme: 'light',
+            lastUpdated: null,
+            settings: {
+                location: 'Cleveland, OH',
+                cryptos: ['bitcoin', 'stellar', 'ripple'],
+                widgets: {
+                    weather: true,
+                    soccer: true,
+                    basketball: true,
+                    crypto: true,
+                    ai: true,
+                    pm: true,
+                    finance: true,
+                    news: true,
+                    writing: true
+                }
+            },
+            data: {}
+        };
+
+        // Initialize
+        function init() {
+            loadSettings();
+            applyTheme();
+            setupEventListeners();
+            loadAllData();
+            setupAutoRefresh();
+        }
+
+        // Load settings from localStorage
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('dashboardSettings');
+            const savedTheme = localStorage.getItem('dashboardTheme');
+
+            if (savedSettings) {
+                state.settings = JSON.parse(savedSettings);
+            }
+
+            if (savedTheme) {
+                state.theme = savedTheme;
+            }
+
+            // Populate settings form
+            document.getElementById('locationInput').value = state.settings.location;
+            document.getElementById('cryptoInput').value = state.settings.cryptos.slice(3).join(', ');
+
+            Object.keys(state.settings.widgets).forEach(widget => {
+                const checkbox = document.getElementById(`widget-${widget}`);
+                if (checkbox) {
+                    checkbox.checked = state.settings.widgets[widget];
+                }
+            });
+        }
+
+        // Save settings to localStorage
+        function saveSettings() {
+            const location = document.getElementById('locationInput').value;
+            const cryptoInput = document.getElementById('cryptoInput').value;
+            const additionalCryptos = cryptoInput ? cryptoInput.split(',').map(c => c.trim().toLowerCase()) : [];
+
+            state.settings.location = location || 'Cleveland, OH';
+            state.settings.cryptos = ['bitcoin', 'stellar', 'ripple', ...additionalCryptos];
+
+            Object.keys(state.settings.widgets).forEach(widget => {
+                const checkbox = document.getElementById(`widget-${widget}`);
+                if (checkbox) {
+                    state.settings.widgets[widget] = checkbox.checked;
+                }
+            });
+
+            localStorage.setItem('dashboardSettings', JSON.stringify(state.settings));
+            closeModal();
+            loadAllData();
+        }
+
+        // Theme Management
+        function applyTheme() {
+            document.documentElement.setAttribute('data-theme', state.theme);
+            document.getElementById('themeToggle').textContent = state.theme === 'light' ? '🌙' : '☀️';
+        }
+
+        function toggleTheme() {
+            state.theme = state.theme === 'light' ? 'dark' : 'light';
+            localStorage.setItem('dashboardTheme', state.theme);
+            applyTheme();
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            document.getElementById('refreshBtn').addEventListener('click', loadAllData);
+            document.getElementById('settingsBtn').addEventListener('click', openModal);
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('saveSettings').addEventListener('click', saveSettings);
+            document.getElementById('backBtn').addEventListener('click', hideDetailView);
+
+            // Close modal on outside click
+            document.getElementById('settingsModal').addEventListener('click', (e) => {
+                if (e.target.id === 'settingsModal') closeModal();
+            });
+        }
+
+        function openModal() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        // Auto Refresh (every 6 hours)
+        function setupAutoRefresh() {
+            setInterval(() => {
+                loadAllData();
+            }, 6 * 60 * 60 * 1000); // 6 hours in milliseconds
+        }
+
+        // Load All Data
+        async function loadAllData() {
+            const grid = document.getElementById('dashboardGrid');
+            grid.innerHTML = '';
+
+            // Show loading state
+            state.data = {};
+
+            // Load data for enabled widgets
+            const promises = [];
+
+            if (state.settings.widgets.weather) {
+                promises.push(loadWeather());
+            }
+            if (state.settings.widgets.soccer) {
+                promises.push(loadSoccer());
+            }
+            if (state.settings.widgets.basketball) {
+                promises.push(loadBasketball());
+            }
+            if (state.settings.widgets.crypto) {
+                promises.push(loadCrypto());
+            }
+            if (state.settings.widgets.ai) {
+                promises.push(loadAINews());
+            }
+            if (state.settings.widgets.pm) {
+                promises.push(loadPMNews());
+            }
+            if (state.settings.widgets.finance) {
+                promises.push(loadFinanceNews());
+            }
+            if (state.settings.widgets.news) {
+                promises.push(loadBreakingNews());
+            }
+            if (state.settings.widgets.writing) {
+                promises.push(loadWritingRecommendations());
+            }
+
+            await Promise.all(promises);
+
+            renderWidgets();
+            updateLastUpdated();
+        }
+
+        // Render Widgets
+        function renderWidgets() {
+            const grid = document.getElementById('dashboardGrid');
+            grid.innerHTML = '';
+
+            if (state.settings.widgets.weather && state.data.weather) {
+                grid.appendChild(createWeatherWidget(state.data.weather));
+            }
+            if (state.settings.widgets.crypto && state.data.crypto) {
+                grid.appendChild(createCryptoWidget(state.data.crypto));
+            }
+            if (state.settings.widgets.soccer && state.data.soccer) {
+                grid.appendChild(createSoccerWidget(state.data.soccer));
+            }
+            if (state.settings.widgets.basketball && state.data.basketball) {
+                grid.appendChild(createBasketballWidget(state.data.basketball));
+            }
+            if (state.settings.widgets.ai && state.data.ai) {
+                grid.appendChild(createNewsWidget('AI & Technology', state.data.ai, '🤖'));
+            }
+            if (state.settings.widgets.pm && state.data.pm) {
+                grid.appendChild(createNewsWidget('Project Management', state.data.pm, '📋'));
+            }
+            if (state.settings.widgets.finance && state.data.finance) {
+                grid.appendChild(createNewsWidget('Finance & Real Estate', state.data.finance, '💰'));
+            }
+            if (state.settings.widgets.news && state.data.news) {
+                grid.appendChild(createNewsWidget('Breaking News', state.data.news, '📰'));
+            }
+            if (state.settings.widgets.writing && state.data.writing) {
+                grid.appendChild(createWritingWidget(state.data.writing));
+            }
+        }
+
+        // API Calls
+        async function loadWeather() {
+            try {
+                // Using OpenWeatherMap API (free tier)
+                // Note: You'll need to sign up for a free API key at openweathermap.org
+                const apiKey = 'YOUR_OPENWEATHER_API_KEY'; // Replace with actual key
+                const location = state.settings.location;
+
+                // For demo purposes, using mock data
+                state.data.weather = {
+                    location: location,
+                    temp: 45,
+                    condition: 'Partly Cloudy',
+                    humidity: 65,
+                    windSpeed: 8,
+                    icon: '⛅'
+                };
+            } catch (error) {
+                console.error('Weather API error:', error);
+                state.data.weather = { error: 'Failed to load weather data' };
+            }
+        }
+
+        async function loadCrypto() {
+            try {
+                const coins = state.settings.cryptos.join(',');
+                const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coins}&vs_currencies=usd&include_24hr_change=true`);
+                const data = await response.json();
+
+                state.data.crypto = Object.keys(data).map(coin => ({
+                    name: coin.charAt(0).toUpperCase() + coin.slice(1),
+                    price: data[coin].usd,
+                    change: data[coin].usd_24h_change
+                }));
+            } catch (error) {
+                console.error('Crypto API error:', error);
+                state.data.crypto = { error: 'Failed to load cryptocurrency data' };
+            }
+        }
+
+        async function loadSoccer() {
+            try {
+                // Using mock data for demo
+                // In production, use API-Football or similar
+                state.data.soccer = {
+                    recentMatches: [
+                        {
+                            league: 'Premier League',
+                            homeTeam: 'Manchester United',
+                            awayTeam: 'Liverpool',
+                            homeScore: 2,
+                            awayScore: 1,
+                            status: 'FT'
+                        },
+                        {
+                            league: 'La Liga',
+                            homeTeam: 'Real Madrid',
+                            awayTeam: 'Barcelona',
+                            homeScore: 3,
+                            awayScore: 2,
+                            status: 'FT'
+                        }
+                    ],
+                    premierLeagueStandings: [
+                        { position: 1, team: 'Arsenal', played: 25, won: 18, drawn: 4, lost: 3, points: 58 },
+                        { position: 2, team: 'Manchester City', played: 25, won: 17, drawn: 5, lost: 3, points: 56 },
+                        { position: 3, team: 'Liverpool', played: 25, won: 16, drawn: 6, lost: 3, points: 54 },
+                        { position: 4, team: 'Manchester United', played: 25, won: 14, drawn: 7, lost: 4, points: 49 },
+                        { position: 5, team: 'Tottenham', played: 25, won: 13, drawn: 5, lost: 7, points: 44 },
+                        { position: 6, team: 'Chelsea', played: 25, won: 12, drawn: 6, lost: 7, points: 42 }
+                    ],
+                    laLigaStandings: [
+                        { position: 1, team: 'Real Madrid', played: 24, won: 19, drawn: 3, lost: 2, points: 60 },
+                        { position: 2, team: 'Barcelona', played: 24, won: 17, drawn: 5, lost: 2, points: 56 },
+                        { position: 3, team: 'Atletico Madrid', played: 24, won: 15, drawn: 6, lost: 3, points: 51 },
+                        { position: 4, team: 'Real Sociedad', played: 24, won: 13, drawn: 5, lost: 6, points: 44 },
+                        { position: 5, team: 'Athletic Bilbao', played: 24, won: 12, drawn: 6, lost: 6, points: 42 }
+                    ],
+                    upcomingFixtures: [
+                        {
+                            league: 'Premier League',
+                            homeTeam: 'Manchester United',
+                            awayTeam: 'Chelsea',
+                            date: 'Feb 12, 2026',
+                            time: '3:00 PM EST'
+                        },
+                        {
+                            league: 'Premier League',
+                            homeTeam: 'Arsenal',
+                            awayTeam: 'Manchester United',
+                            date: 'Feb 16, 2026',
+                            time: '12:30 PM EST'
+                        },
+                        {
+                            league: 'La Liga',
+                            homeTeam: 'Real Madrid',
+                            awayTeam: 'Atletico Madrid',
+                            date: 'Feb 13, 2026',
+                            time: '4:00 PM EST'
+                        },
+                        {
+                            league: 'La Liga',
+                            homeTeam: 'Sevilla',
+                            awayTeam: 'Real Madrid',
+                            date: 'Feb 17, 2026',
+                            time: '3:30 PM EST'
+                        }
+                    ]
+                };
+            } catch (error) {
+                console.error('Soccer API error:', error);
+                state.data.soccer = { error: 'Failed to load soccer data' };
+            }
+        }
+
+        async function loadBasketball() {
+            try {
+                // Mock data for demo
+                state.data.basketball = [
+                    {
+                        league: 'NBA',
+                        homeTeam: 'Lakers',
+                        awayTeam: 'Warriors',
+                        homeScore: 110,
+                        awayScore: 105,
+                        status: 'Final'
+                    },
+                    {
+                        league: 'NBA',
+                        homeTeam: 'Cavaliers',
+                        awayTeam: 'Celtics',
+                        homeScore: 98,
+                        awayScore: 102,
+                        status: 'Final'
+                    }
+                ];
+            } catch (error) {
+                console.error('Basketball API error:', error);
+                state.data.basketball = { error: 'Failed to load basketball data' };
+            }
+        }
+
+        async function loadAINews() {
+            try {
+                // Mock data - in production use NewsAPI or RSS feeds
+                state.data.ai = [
+                    {
+                        title: 'New AI Model Achieves Breakthrough in Natural Language Understanding',
+                        source: 'TechCrunch',
+                        time: '2 hours ago',
+                        url: '#',
+                        author: 'Sarah Johnson',
+                        summary: 'Researchers at a leading AI lab have developed a new language model that demonstrates unprecedented understanding of context and nuance in human communication.',
+                        content: 'In a groundbreaking development, researchers have unveiled an AI model that shows remarkable improvements in natural language understanding. The model, trained on diverse datasets, demonstrates superior performance in context comprehension, sentiment analysis, and generating human-like responses. Early tests show a 40% improvement over previous benchmarks. The research team believes this could revolutionize how AI systems interact with users across various applications, from customer service to educational tools. The model\'s ability to understand subtle contextual cues and maintain coherent long-form conversations marks a significant step forward in AI development.',
+                        category: 'AI Research',
+                        readTime: '5 min read',
+                        image: '🤖',
+                        imageAlt: 'AI and Natural Language'
+                    },
+                    {
+                        title: 'Ethics Committee Releases Guidelines for AI Development',
+                        source: 'AI Ethics Journal',
+                        time: '5 hours ago',
+                        url: '#',
+                        author: 'Dr. Michael Chen',
+                        summary: 'A comprehensive set of ethical guidelines aims to ensure responsible AI development and deployment across industries.',
+                        content: 'The International AI Ethics Committee has released a comprehensive framework for ethical AI development. The guidelines cover key areas including data privacy, algorithmic transparency, bias mitigation, and accountability. Major tech companies have pledged to adopt these standards. The framework emphasizes the importance of human oversight, regular audits, and diverse representation in AI development teams. It also addresses concerns about job displacement and recommends strategies for workforce transition. Industry leaders praise the guidelines as a crucial step toward building trust in AI systems while ensuring they benefit all of humanity.',
+                        category: 'AI Ethics',
+                        readTime: '7 min read',
+                        image: '⚖️',
+                        imageAlt: 'AI Ethics and Governance'
+                    },
+                    {
+                        title: 'Major Tech Company Announces Open-Source AI Framework',
+                        source: 'VentureBeat',
+                        time: '8 hours ago',
+                        url: '#',
+                        author: 'Alex Rodriguez',
+                        summary: 'The new framework promises to democratize AI development and accelerate innovation across the industry.',
+                        content: 'A leading technology company has announced the release of its proprietary AI framework as open-source software. The framework, which has powered the company\'s products for years, includes tools for model training, deployment, and monitoring. By making it freely available, the company aims to accelerate AI innovation and make advanced AI capabilities accessible to smaller organizations and independent developers. The framework supports multiple programming languages and includes pre-trained models for common tasks. Industry analysts predict this move could significantly impact the AI ecosystem, fostering collaboration and innovation while potentially establishing new industry standards.',
+                        category: 'Technology',
+                        readTime: '6 min read',
+                        image: '💻',
+                        imageAlt: 'Open Source Technology'
+                    },
+                    {
+                        title: 'AI-Powered Healthcare Diagnostic Tool Shows 95% Accuracy Rate',
+                        source: 'Health Tech Today',
+                        time: '12 hours ago',
+                        url: '#',
+                        author: 'Dr. Emily Watson',
+                        summary: 'New AI system demonstrates remarkable accuracy in early disease detection, potentially saving millions of lives.',
+                        content: 'A revolutionary AI diagnostic tool has achieved a 95% accuracy rate in early disease detection during clinical trials. The system analyzes medical imaging, patient history, and biomarkers to identify potential health issues before symptoms appear. Tested across multiple hospitals, the AI correctly identified early-stage conditions that human doctors might miss. The technology is particularly effective in detecting certain cancers, cardiovascular issues, and neurological disorders. Medical professionals emphasize that the AI is designed to assist, not replace, human doctors, serving as a powerful second opinion tool that could dramatically improve patient outcomes and reduce healthcare costs.',
+                        category: 'Healthcare',
+                        readTime: '8 min read',
+                        image: '🏥',
+                        imageAlt: 'Healthcare AI Technology'
+                    },
+                    {
+                        title: 'The Future of AI in Climate Change Solutions',
+                        source: 'Environmental Science Weekly',
+                        time: '1 day ago',
+                        url: '#',
+                        author: 'James Martinez',
+                        summary: 'Artificial intelligence is emerging as a powerful tool in the fight against climate change, from prediction models to renewable energy optimization.',
+                        content: 'Scientists are increasingly leveraging AI to address climate change challenges. Machine learning algorithms are improving climate prediction models, optimizing renewable energy systems, and identifying new materials for carbon capture. AI-powered satellite analysis helps monitor deforestation and ocean health in real-time. Smart grid systems use AI to balance energy supply and demand, reducing waste and emissions. Agricultural AI tools help farmers adapt to changing conditions while minimizing environmental impact. Researchers believe AI could be instrumental in achieving climate goals, though they caution that the technology itself must be developed sustainably to avoid contributing to the problem it aims to solve.',
+                        category: 'Environment',
+                        readTime: '10 min read',
+                        image: '🌍',
+                        imageAlt: 'Climate and Environment'
+                    }
+                ];
+            } catch (error) {
+                console.error('AI News error:', error);
+                state.data.ai = { error: 'Failed to load AI news' };
+            }
+        }
+
+        async function loadPMNews() {
+            try {
+                state.data.pm = [
+                    {
+                        title: 'Agile Methodology Best Practices for 2026',
+                        source: 'Scrum.org',
+                        time: '1 day ago',
+                        url: '#',
+                        author: 'Ken Schwaber',
+                        summary: 'Discover the latest best practices in Agile methodology that are shaping how teams deliver value in 2026.',
+                        content: 'As we progress through 2026, Agile methodology continues to evolve. This year\'s best practices emphasize continuous learning, adaptive planning, and customer collaboration more than ever. Teams are adopting hybrid approaches that blend Scrum and Kanban, creating flexible frameworks tailored to their unique contexts. Key trends include: increased focus on outcome over output metrics, integration of AI tools for sprint planning and retrospectives, and stronger emphasis on team wellness and sustainable pace. Organizations that embrace these practices are seeing 35% improvement in delivery times and 50% increase in team satisfaction. The article explores real-world case studies from companies that have successfully implemented these approaches, offering practical insights for teams at any stage of their Agile journey.',
+                        category: 'Agile',
+                        readTime: '12 min read',
+                        image: '🎯',
+                        imageAlt: 'Agile Methodology'
+                    },
+                    {
+                        title: 'How Lean Six Sigma Transforms Project Delivery',
+                        source: 'PM Institute',
+                        time: '1 day ago',
+                        url: '#',
+                        author: 'Dr. Maria Rodriguez',
+                        summary: 'Learn how combining Lean and Six Sigma methodologies creates powerful results in project management.',
+                        content: 'Lean Six Sigma has become a game-changer for organizations seeking to optimize their project delivery processes. By combining Lean\'s waste elimination principles with Six Sigma\'s data-driven approach to reducing defects, project managers are achieving unprecedented levels of efficiency and quality. Recent studies show that organizations implementing Lean Six Sigma see average cost reductions of 30% and quality improvements of 45%. The methodology\'s DMAIC framework (Define, Measure, Analyze, Improve, Control) provides a structured approach to problem-solving that works across industries. This article presents three detailed case studies: a manufacturing company that reduced production time by 40%, a healthcare provider that improved patient outcomes while cutting costs, and a software company that decreased bug rates by 60%. Each case demonstrates practical applications of Lean Six Sigma tools and techniques that readers can adapt to their own projects.',
+                        category: 'Lean Six Sigma',
+                        readTime: '15 min read',
+                        image: '📊',
+                        imageAlt: 'Lean Six Sigma'
+                    },
+                    {
+                        title: 'The Future of Hybrid Work in Project Management',
+                        source: 'PMI',
+                        time: '2 days ago',
+                        url: '#',
+                        author: 'Rachel Green',
+                        summary: 'Explore how hybrid work models are reshaping project management practices and team collaboration.',
+                        content: 'The hybrid work revolution has fundamentally changed how project managers lead their teams. With 73% of organizations now operating in hybrid mode, project managers must master new skills in virtual collaboration, asynchronous communication, and distributed team management. This comprehensive guide explores emerging best practices: using digital collaboration tools effectively, maintaining team cohesion across time zones, balancing synchronous and asynchronous work, and creating inclusive meeting cultures. Research shows that well-managed hybrid teams can be 20% more productive than traditional office-based teams, but only when leaders intentionally design their processes for flexibility. The article includes expert interviews with PMs from Fortune 500 companies, practical frameworks for hybrid sprint planning and daily standups, and strategies for maintaining team culture and psychological safety in distributed environments. Whether you\'re new to hybrid work or looking to optimize your current approach, this piece offers actionable insights backed by the latest research.',
+                        category: 'Project Management',
+                        readTime: '18 min read',
+                        image: '🏢',
+                        imageAlt: 'Hybrid Work'
+                    },
+                    {
+                        title: 'OKRs vs. KPIs: Choosing the Right Framework for Your Team',
+                        source: 'Agile Alliance',
+                        time: '3 days ago',
+                        url: '#',
+                        author: 'David Kim',
+                        summary: 'A comprehensive comparison of OKRs and KPIs to help you select the best performance measurement framework.',
+                        content: 'Objectives and Key Results (OKRs) and Key Performance Indicators (KPIs) are both powerful tools, but they serve different purposes. This in-depth analysis helps leaders understand when to use each framework. OKRs excel at driving innovation and alignment around ambitious goals, while KPIs are better for monitoring ongoing operations and maintaining standards. The article presents a decision matrix based on team maturity, organizational culture, and strategic objectives. Real-world examples show how Google, Intel, and smaller startups have successfully implemented OKRs, while established enterprises use KPIs effectively. Many organizations find success in using both frameworks in tandem, with KPIs tracking operational health and OKRs driving strategic initiatives. The piece includes templates, implementation guides, and common pitfalls to avoid when adopting either framework.',
+                        category: 'Metrics',
+                        readTime: '14 min read',
+                        image: '📈',
+                        imageAlt: 'Metrics and KPIs'
+                    }
+                ];
+            } catch (error) {
+                console.error('PM News error:', error);
+                state.data.pm = { error: 'Failed to load PM news' };
+            }
+        }
+
+        async function loadFinanceNews() {
+            try {
+                state.data.finance = [
+                    {
+                        title: 'Cleveland Real Estate Market Shows Strong Growth',
+                        source: 'Cleveland.com',
+                        time: '3 hours ago',
+                        url: '#',
+                        author: 'Jennifer Williams',
+                        summary: 'Cleveland\'s real estate market is experiencing robust growth with home values up 12% year-over-year.',
+                        content: 'Cleveland\'s real estate market is booming, with home values increasing 12% over the past year. The average home price in the metro area now stands at $245,000, up from $218,000 last year. Downtown areas are seeing the strongest growth, with some neighborhoods experiencing 18% appreciation. Factors driving the growth include: increased remote work flexibility attracting out-of-state buyers, major corporate expansions bringing new jobs, and ongoing revitalization projects in historic neighborhoods. First-time homebuyers are finding opportunities in up-and-coming areas like Ohio City and Tremont, while investors are focusing on multi-family properties in University Circle. Local real estate experts predict the market will remain strong through 2026, though they caution that rising interest rates may moderate the pace of growth. The article includes neighborhood-by-neighborhood analysis, investment hotspots, and advice for both buyers and sellers navigating this competitive market.',
+                        category: 'Real Estate',
+                        readTime: '10 min read',
+                        image: '🏘️',
+                        imageAlt: 'Real Estate Market'
+                    },
+                    {
+                        title: 'Bitcoin Reaches New Milestone Amid Market Rally',
+                        source: 'CoinDesk',
+                        time: '5 hours ago',
+                        url: '#',
+                        author: 'Marcus Chen',
+                        summary: 'Bitcoin surpasses key resistance level as institutional adoption continues to accelerate.',
+                        content: 'Bitcoin has reached a significant milestone, breaking through the $75,000 barrier for the first time since early 2025. The rally is fueled by renewed institutional interest, with several major investment firms launching Bitcoin-focused products. Trading volume has increased 45% over the past week, indicating strong market participation. Analysts attribute the surge to multiple factors: clearer regulatory frameworks in major markets, inflation concerns driving investors toward digital assets, and technological improvements in the Bitcoin network increasing transaction efficiency. Ethereum and other major altcoins are also showing strength, with XRP up 15% and Stellar (XLM) gaining 12% in the past 24 hours. However, experts caution against excessive enthusiasm, noting that crypto markets remain volatile. The article provides technical analysis, discusses macroeconomic factors influencing crypto prices, and offers risk management strategies for investors at different experience levels.',
+                        category: 'Cryptocurrency',
+                        readTime: '8 min read',
+                        image: '₿',
+                        imageAlt: 'Bitcoin Cryptocurrency'
+                    },
+                    {
+                        title: '5 Investment Tips for Building Long-Term Wealth',
+                        source: 'Forbes',
+                        time: '1 day ago',
+                        url: '#',
+                        author: 'Robert Foster',
+                        summary: 'Financial experts share proven strategies for building sustainable wealth through disciplined investing.',
+                        content: 'Building long-term wealth requires patience, discipline, and smart strategy. This comprehensive guide from leading financial advisors presents five essential principles: 1) Start Early - The power of compound interest cannot be overstated; even small monthly investments can grow substantially over decades. 2) Diversify Wisely - Spread investments across stocks, bonds, real estate, and alternative assets to manage risk. 3) Keep Costs Low - High fees erode returns; focus on low-cost index funds and ETFs. 4) Stay the Course - Market volatility is normal; avoid emotional decisions and stick to your long-term plan. 5) Continuously Educate Yourself - Markets evolve; successful investors never stop learning. The article includes specific portfolio allocation recommendations for different age groups, tax optimization strategies, and guidance on when to seek professional financial advice. Real-world examples show how these principles have helped ordinary individuals build seven-figure portfolios over 20-30 year periods. Whether you\'re just starting your investment journey or looking to optimize an existing portfolio, these time-tested strategies provide a roadmap to financial security.',
+                        category: 'Personal Finance',
+                        readTime: '16 min read',
+                        image: '💵',
+                        imageAlt: 'Wealth Building'
+                    },
+                    {
+                        title: 'XRP and Stellar See Surge in Enterprise Adoption',
+                        source: 'Crypto Weekly',
+                        time: '2 days ago',
+                        url: '#',
+                        author: 'Lisa Anderson',
+                        summary: 'Major financial institutions are increasingly adopting XRP and Stellar for cross-border payments.',
+                        content: 'Enterprise adoption of Ripple\'s XRP and the Stellar network is accelerating, with over 50 financial institutions announcing new integrations this quarter. Both networks are gaining traction for cross-border payments due to their speed, low costs, and scalability. Traditional international transfers can take days and cost $25-50; XRP and Stellar transactions complete in seconds for fractions of a penny. Major banks in Asia, Europe, and Latin America are implementing these technologies to improve customer experience and reduce operational costs. Stellar, in particular, is seeing strong adoption for remittances and micropayments in developing markets. The networks\' focus on regulatory compliance and working within existing financial frameworks has helped win over traditional institutions that were initially skeptical of cryptocurrency. Market analysts predict this enterprise adoption will drive sustained growth in both XRP and XLM values, though they note regulatory developments remain a key factor to watch.',
+                        category: 'Cryptocurrency',
+                        readTime: '11 min read',
+                        image: '🌟',
+                        imageAlt: 'XRP and Stellar'
+                    }
+                ];
+            } catch (error) {
+                console.error('Finance News error:', error);
+                state.data.finance = { error: 'Failed to load finance news' };
+            }
+        }
+
+        async function loadWritingRecommendations() {
+            try {
+                state.data.writing = {
+                    weekOf: 'February 9-15, 2026',
+                    trend: 'AI integration in Agile workflows is the hottest topic this week, alongside renewed debates about remote work effectiveness and the rise of "quiet firing" in tech.',
+                    recommendations: [
+                        {
+                            title: 'The AI Scrum Master: Helper or Hype?',
+                            rationale: 'AI tools are now running sprint planning and retrospectives. Everyone\'s talking about it, but few are honestly discussing what we\'re losing in human connection.',
+                            angle: 'Share a real retrospective story where AI failed to catch team dynamics that a human would notice instantly.',
+                            engagement: 'High - This challenges the AI-will-solve-everything narrative',
+                            linkedinTags: '#Agile #AI #ScrumMaster #Leadership',
+                            image: '🤖',
+                            readTime: '3-4 min read',
+                            tone: 'Provocative but balanced'
+                        },
+                        {
+                            title: 'Quiet Firing: The New Agile Anti-Pattern',
+                            rationale: 'Companies are "reorganizing" teams into oblivion instead of having honest conversations. It\'s the opposite of agile values.',
+                            angle: 'Call out this trend. Share signs of quiet firing disguised as "agile transformation" or "team optimization."',
+                            engagement: 'Very High - People are experiencing this but afraid to name it',
+                            linkedinTags: '#Leadership #AgileTransformation #WorkplaceCulture',
+                            image: '🚫',
+                            readTime: '4-5 min read',
+                            tone: 'Direct and unflinching'
+                        },
+                        {
+                            title: 'Your Daily Standup Is a Status Report (And That\'s The Problem)',
+                            rationale: 'Most teams are doing standups wrong, turning them into micromanagement theater instead of collaboration.',
+                            angle: 'Contrast a bad standup (robotic updates) with a good one (actual problem-solving). Give 3 specific fixes.',
+                            engagement: 'High - Everyone suffers through bad standups',
+                            linkedinTags: '#Scrum #DailyStandup #TeamWork #Agile',
+                            image: '⏰',
+                            readTime: '3 min read',
+                            tone: 'Practical and slightly sarcastic'
+                        },
+                        {
+                            title: 'The Metrics That Matter: Stop Measuring Velocity',
+                            rationale: 'Velocity gaming is killing teams. There\'s renewed discussion about what actually indicates team health.',
+                            angle: 'Share a story of how focusing on velocity backfired. Propose 2-3 better alternatives (cycle time, quality metrics, team satisfaction).',
+                            engagement: 'Very High - Hits a painful nerve for PMs and developers',
+                            linkedinTags: '#AgileMetrics #ProductManagement #Leadership',
+                            image: '📉',
+                            readTime: '5-6 min read',
+                            tone: 'Evidence-based and passionate'
+                        },
+                        {
+                            title: 'Hybrid Work Killed Our Sprint Planning (Here\'s How We Fixed It)',
+                            rationale: 'Hybrid work challenges are peaking as companies mandate returns. Teams are struggling with async vs sync ceremonies.',
+                            angle: 'Tell the before/after story. What failed in hybrid sprint planning, and what actually works. Be specific about tools and practices.',
+                            engagement: 'High - Immediately useful and timely',
+                            linkedinTags: '#HybridWork #SprintPlanning #RemoteWork #Agile',
+                            image: '🏠',
+                            readTime: '4-5 min read',
+                            tone: 'Solution-focused and honest'
+                        },
+                        {
+                            title: 'Hiring Red Flags: When "Agile" Means "Chaos"',
+                            rationale: 'Job seekers are getting burned by companies claiming to be agile. Help them spot the fakes.',
+                            angle: 'List 5-7 interview red flags (e.g., "we\'re too fast for documentation," "our sprints are flexible" = no sprints, etc.). Offer counter-questions to ask.',
+                            engagement: 'Very High - Career advice always performs well',
+                            linkedinTags: '#CareerAdvice #AgileCulture #Hiring #JobSearch',
+                            image: '🚩',
+                            readTime: '4 min read',
+                            tone: 'Protective and empowering'
+                        },
+                        {
+                            title: 'The Fake Agility Test: 10 Questions Your Org Will Fail',
+                            rationale: 'Many orgs claim agile but practice waterfall with standups. Create a diagnostic people can use.',
+                            angle: 'Write 10 yes/no questions that reveal fake agility (e.g., "Can teams say no to work?" "Are estimates treated as commitments?"). Score it and offer next steps.',
+                            engagement: 'Very High - Interactive, shareable, forces self-reflection',
+                            linkedinTags: '#AgileTransformation #OrganizationalCulture #Leadership',
+                            image: '✅',
+                            readTime: '5-7 min read',
+                            tone: 'Challenge mode activated'
+                        }
+                    ]
+                };
+            } catch (error) {
+                console.error('Writing Recommendations error:', error);
+                state.data.writing = { error: 'Failed to load writing recommendations' };
+            }
+        }
+
+        async function loadBreakingNews() {
+            try {
+                state.data.news = [
+                    {
+                        title: 'Major Policy Announcement Expected This Week',
+                        source: 'Reuters',
+                        time: '1 hour ago',
+                        url: '#',
+                        author: 'Thomas Anderson',
+                        summary: 'Government officials signal significant policy changes coming in infrastructure and technology sectors.',
+                        content: 'Government sources indicate a major policy announcement is imminent, likely to be unveiled within the next 48-72 hours. While details remain confidential, insiders suggest the announcement will focus on infrastructure investment and technology sector regulation. The policy package is expected to include: significant funding for renewable energy infrastructure, updated guidelines for AI development and deployment, initiatives to expand broadband access in rural areas, and incentives for domestic semiconductor manufacturing. Political analysts believe the timing is strategic, aimed at addressing economic concerns while positioning the country competitively in emerging technologies. Industry leaders have been briefed in private sessions and are reportedly supportive of the direction. The announcement could have far-reaching implications for investors, with potentially significant impacts on technology stocks, clean energy companies, and infrastructure contractors. Markets are watching closely, with technology indices showing volatility in anticipation of the news.',
+                        category: 'Politics',
+                        readTime: '7 min read',
+                        image: '🏛️',
+                        imageAlt: 'Government Policy'
+                    },
+                    {
+                        title: 'Technology Sector Sees Record Investment',
+                        source: 'AP News',
+                        time: '3 hours ago',
+                        url: '#',
+                        author: 'Patricia Lee',
+                        summary: 'Venture capital funding in technology reaches all-time high, driven by AI and clean tech investments.',
+                        content: 'The technology sector attracted a record $180 billion in venture capital funding in the first quarter of 2026, surpassing previous records by 25%. Artificial intelligence companies captured 40% of total investment, with particular interest in enterprise AI applications, healthcare AI, and AI security tools. Clean technology is the second-hottest sector, receiving $32 billion as investors bet on solutions to climate change. Notable mega-rounds include a $2.5 billion investment in an AI chip manufacturer and a $1.8 billion round for a carbon capture technology company. Investor enthusiasm reflects both the transformative potential of these technologies and concerns about missing out on the next wave of innovation. However, some analysts warn that valuations may be stretched, drawing comparisons to previous tech bubbles. The article examines current market dynamics, interviews leading venture capitalists about their investment theses, and analyzes which subsectors are likely to see continued strong funding versus those that may be approaching peak hype.',
+                        category: 'Business',
+                        readTime: '12 min read',
+                        image: '💼',
+                        imageAlt: 'Tech Investment'
+                    },
+                    {
+                        title: 'Global Summit Addresses Climate Initiatives',
+                        source: 'BBC',
+                        time: '6 hours ago',
+                        url: '#',
+                        author: 'James Mitchell',
+                        summary: 'World leaders convene to accelerate climate action with new commitments and collaborative frameworks.',
+                        content: 'Representatives from 170 countries gathered at the Global Climate Summit to forge new agreements on emissions reduction and climate adaptation. The summit produced several significant outcomes: a collective commitment to achieve net-zero emissions by 2050, establishment of a $100 billion fund to help developing nations transition to clean energy, and new technology-sharing agreements to accelerate innovation. Breakthrough announcements include major economies pledging to phase out coal power by 2035 and a coalition of nations committing to protect 30% of ocean areas by 2030. Private sector participation was unprecedented, with companies representing $15 trillion in market capitalization pledging to align their operations with 1.5°C warming scenarios. Youth activists and indigenous leaders played prominent roles, emphasizing the need for immediate action and equitable solutions. While environmental groups praised the commitments as historic, some critics argue the timelines aren\'t aggressive enough given the urgency of the climate crisis. The article provides detailed analysis of key agreements, evaluates their potential impact, and examines the mechanisms for ensuring accountability.',
+                        category: 'Environment',
+                        readTime: '14 min read',
+                        image: '🌱',
+                        imageAlt: 'Climate Action'
+                    },
+                    {
+                        title: 'Breakthrough in Medical Research Offers Hope for Alzheimer\'s Patients',
+                        source: 'Science Daily',
+                        time: '8 hours ago',
+                        url: '#',
+                        author: 'Dr. Susan Palmer',
+                        summary: 'New treatment shows promising results in slowing cognitive decline in early-stage Alzheimer\'s patients.',
+                        content: 'Researchers have announced promising results from a Phase III clinical trial of a new Alzheimer\'s treatment. The therapy, which combines a novel antibody with targeted brain stimulation, showed a 45% reduction in cognitive decline among early-stage patients over an 18-month period. This represents the most significant advance in Alzheimer\'s treatment in over a decade. The treatment works by clearing amyloid plaques from the brain while simultaneously promoting neural plasticity through non-invasive electrical stimulation. Of 2,400 trial participants, those receiving the combination therapy maintained cognitive function significantly better than the placebo group, with some patients showing slight improvements in memory and executive function. Side effects were generally mild and manageable. The research team emphasizes that this is not a cure, but it offers hope for slowing disease progression and maintaining quality of life longer. If approved by regulatory agencies, the treatment could be available to patients within 12-18 months. The discovery has major implications for the millions of families affected by Alzheimer\'s worldwide and could reshape the landscape of neurodegenerative disease treatment.',
+                        category: 'Health',
+                        readTime: '10 min read',
+                        image: '🧠',
+                        imageAlt: 'Medical Research'
+                    }
+                ];
+            } catch (error) {
+                console.error('Breaking News error:', error);
+                state.data.news = { error: 'Failed to load news' };
+            }
+        }
+
+        // Widget Creators
+        function createWeatherWidget(data) {
+            const widget = document.createElement('div');
+            widget.className = 'widget';
+
+            if (data.error) {
+                widget.innerHTML = `
+                    <div class="widget-header">
+                        <h3 class="widget-title">Weather</h3>
+                        <span class="widget-icon">🌤️</span>
+                    </div>
+                    <div class="widget-content">
+                        <div class="error">${data.error}</div>
+                    </div>
+                `;
+                return widget;
+            }
+
+            widget.innerHTML = `
+                <div class="widget-header">
+                    <h3 class="widget-title">Weather</h3>
+                    <span class="widget-icon">${data.icon}</span>
+                </div>
+                <div class="widget-content">
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: var(--text-primary);">${data.temp}°F</div>
+                        <div style="font-size: 1.1rem; color: var(--text-secondary);">${data.condition}</div>
+                        <div style="margin-top: 5px; color: var(--text-secondary);">${data.location}</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Humidity</span>
+                        <span class="stat-value">${data.humidity}%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Wind Speed</span>
+                        <span class="stat-value">${data.windSpeed} mph</span>
+                    </div>
+                </div>
+            `;
+
+            // Weather doesn't need detail view
+            widget.style.cursor = 'default';
+            widget.querySelector('.widget::after')?.remove();
+
+            return widget;
+        }
+
+        function createCryptoWidget(data) {
+            const widget = document.createElement('div');
+            widget.className = 'widget';
+
+            if (data.error) {
+                widget.innerHTML = `
+                    <div class="widget-header">
+                        <h3 class="widget-title">Cryptocurrency</h3>
+                        <span class="widget-icon">₿</span>
+                    </div>
+                    <div class="widget-content">
+                        <div class="error">${data.error}</div>
+                    </div>
+                `;
+                return widget;
+            }
+
+            const cryptoItems = data.map(coin => `
+                <div class="stat-item">
+                    <span class="stat-label">${coin.name}</span>
+                    <span class="stat-value">
+                        $${coin.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <small class="${coin.change >= 0 ? 'price-up' : 'price-down'}">
+                            ${coin.change >= 0 ? '▲' : '▼'} ${Math.abs(coin.change).toFixed(2)}%
+                        </small>
+                    </span>
+                </div>
+            `).join('');
+
+            widget.innerHTML = `
+                <div class="widget-header">
+                    <h3 class="widget-title">Cryptocurrency</h3>
+                    <span class="widget-icon">₿</span>
+                </div>
+                <div class="widget-content">
+                    ${cryptoItems}
+                </div>
+            `;
+
+            // Add click handler
+            widget.addEventListener('click', () => {
+                showDetailView('Cryptocurrency', '₿', data, 'crypto');
+            });
+
+            return widget;
+        }
+
+        function createSoccerWidget(data) {
+            const widget = document.createElement('div');
+            widget.className = 'widget';
+
+            if (data.error) {
+                widget.innerHTML = `
+                    <div class="widget-header">
+                        <h3 class="widget-title">Soccer</h3>
+                        <span class="widget-icon">⚽</span>
+                    </div>
+                    <div class="widget-content">
+                        <div class="error">${data.error}</div>
+                    </div>
+                `;
+                return widget;
+            }
+
+            const matches = data.recentMatches.map(match => `
+                <div class="match-card">
+                    <div class="match-header">${match.league} - ${match.status}</div>
+                    <div class="match-teams">
+                        <div class="team">
+                            <div class="team-name">${match.homeTeam}</div>
+                            <div class="score">${match.homeScore}</div>
+                        </div>
+                        <div class="vs">VS</div>
+                        <div class="team">
+                            <div class="team-name">${match.awayTeam}</div>
+                            <div class="score">${match.awayScore}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            widget.innerHTML = `
+                <div class="widget-header">
+                    <h3 class="widget-title">Soccer</h3>
+                    <span class="widget-icon">⚽</span>
+                </div>
+                <div class="widget-content">
+                    ${matches}
+                </div>
+            `;
+
+            // Add click handler
+            widget.addEventListener('click', () => {
+                showDetailView('Soccer', '⚽', data, 'sports');
+            });
+
+            return widget;
+        }
+
+        function createBasketballWidget(data) {
+            const widget = document.createElement('div');
+            widget.className = 'widget';
+
+            if (data.error) {
+                widget.innerHTML = `
+                    <div class="widget-header">
+                        <h3 class="widget-title">Basketball</h3>
+                        <span class="widget-icon">🏀</span>
+                    </div>
+                    <div class="widget-content">
+                        <div class="error">${data.error}</div>
+                    </div>
+                `;
+                return widget;
+            }
+
+            const matches = data.map(match => `
+                <div class="match-card">
+                    <div class="match-header">${match.league} - ${match.status}</div>
+                    <div class="match-teams">
+                        <div class="team">
+                            <div class="team-name">${match.homeTeam}</div>
+                            <div class="score">${match.homeScore}</div>
+                        </div>
+                        <div class="vs">VS</div>
+                        <div class="team">
+                            <div class="team-name">${match.awayTeam}</div>
+                            <div class="score">${match.awayScore}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            widget.innerHTML = `
+                <div class="widget-header">
+                    <h3 class="widget-title">Basketball</h3>
+                    <span class="widget-icon">🏀</span>
+                </div>
+                <div class="widget-content">
+                    ${matches}
+                </div>
+            `;
+
+            // Add click handler
+            widget.addEventListener('click', () => {
+                showDetailView('Basketball', '🏀', data, 'sports');
+            });
+
+            return widget;
+        }
+
+        function createNewsWidget(title, data, icon) {
+            const widget = document.createElement('div');
+            widget.className = 'widget';
+
+            if (data.error) {
+                widget.innerHTML = `
+                    <div class="widget-header">
+                        <h3 class="widget-title">${title}</h3>
+                        <span class="widget-icon">${icon}</span>
+                    </div>
+                    <div class="widget-content">
+                        <div class="error">${data.error}</div>
+                    </div>
+                `;
+                return widget;
+            }
+
+            const newsItems = data.slice(0, 5).map(item => `
+                <div class="news-item">
+                    <div class="news-title">${item.title}</div>
+                    <div class="news-meta">${item.source} • ${item.time}</div>
+                </div>
+            `).join('');
+
+            widget.innerHTML = `
+                <div class="widget-header">
+                    <h3 class="widget-title">${title}</h3>
+                    <span class="widget-icon">${icon}</span>
+                </div>
+                <div class="widget-content">
+                    ${newsItems}
+                </div>
+            `;
+
+            // Add click handler to open detail view
+            widget.addEventListener('click', () => {
+                showDetailView(title, icon, data, 'news');
+            });
+
+            return widget;
+        }
+
+        function createWritingWidget(data) {
+            const widget = document.createElement('div');
+            widget.className = 'widget';
+
+            if (data.error) {
+                widget.innerHTML = `
+                    <div class="widget-header">
+                        <h3 class="widget-title">Writing Recommendations</h3>
+                        <span class="widget-icon">✍️</span>
+                    </div>
+                    <div class="widget-content">
+                        <div class="error">${data.error}</div>
+                    </div>
+                `;
+                return widget;
+            }
+
+            const topTopics = data.recommendations.slice(0, 3).map(rec => `
+                <div class="news-item">
+                    <div class="news-title">${rec.image} ${rec.title}</div>
+                    <div class="news-meta">${rec.engagement} engagement • ${rec.readTime}</div>
+                </div>
+            `).join('');
+
+            widget.innerHTML = `
+                <div class="widget-header">
+                    <h3 class="widget-title">Writing Recommendations</h3>
+                    <span class="widget-icon">✍️</span>
+                </div>
+                <div class="widget-content">
+                    <div style="background-color: var(--bg-secondary); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                        <strong style="color: var(--accent-color);">Week of ${data.weekOf}</strong>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 5px;">
+                            ${data.trend}
+                        </div>
+                    </div>
+                    ${topTopics}
+                </div>
+            `;
+
+            // Add click handler
+            widget.addEventListener('click', () => {
+                showDetailView('Writing Recommendations', '✍️', data, 'writing');
+            });
+
+            return widget;
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            state.lastUpdated = now;
+            document.getElementById('lastUpdated').textContent =
+                `Last updated: ${now.toLocaleString()}`;
+        }
+
+        // Detail View Functions
+        function showDetailView(title, icon, data, type) {
+            document.getElementById('detailViewTitleText').textContent = title;
+            document.getElementById('detailViewIcon').textContent = icon;
+
+            const contentContainer = document.getElementById('detailViewContent');
+            contentContainer.innerHTML = '';
+
+            if (type === 'news') {
+                renderNewsDetails(data, contentContainer);
+            } else if (type === 'sports') {
+                renderSportsDetails(data, contentContainer, title);
+            } else if (type === 'crypto') {
+                renderCryptoDetails(data, contentContainer);
+            } else if (type === 'writing') {
+                renderWritingDetails(data, contentContainer);
+            }
+
+            document.getElementById('detailView').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function hideDetailView() {
+            document.getElementById('detailView').classList.remove('active');
+        }
+
+        function renderNewsDetails(articles, container) {
+            if (!articles || articles.length === 0) {
+                container.innerHTML = '<div class="no-items">No articles available</div>';
+                return;
+            }
+
+            articles.forEach(article => {
+                const detailItem = document.createElement('div');
+                detailItem.className = 'detail-item';
+
+                detailItem.innerHTML = `
+                    ${article.image ? `<div class="article-image">${article.image}</div>` : ''}
+                    <div class="detail-item-header">
+                        <h3 class="detail-item-title">${article.title}</h3>
+                    </div>
+                    <div class="detail-item-meta">
+                        <span class="meta-badge">📰 ${article.source}</span>
+                        <span class="meta-badge">✍️ ${article.author}</span>
+                        <span class="meta-badge">🕐 ${article.time}</span>
+                        <span class="meta-badge">📖 ${article.readTime}</span>
+                        <span class="meta-badge" style="background-color: var(--accent-color); color: white;">${article.category}</span>
+                    </div>
+                    <div class="detail-item-summary">
+                        <strong>Summary:</strong> ${article.summary}
+                    </div>
+                    <div class="detail-item-content">
+                        ${article.content}
+                    </div>
+                `;
+
+                container.appendChild(detailItem);
+            });
+        }
+
+        function renderSportsDetails(data, container, sport) {
+            if (sport === 'Soccer') {
+                // Render recent matches
+                if (data.recentMatches && data.recentMatches.length > 0) {
+                    const recentSection = document.createElement('div');
+                    recentSection.innerHTML = '<h3 class="section-title">⚽ Recent Matches</h3>';
+                    container.appendChild(recentSection);
+
+                    data.recentMatches.forEach(match => {
+                        const matchItem = document.createElement('div');
+                        matchItem.className = 'detail-item';
+
+                        const winner = match.homeScore > match.awayScore ? match.homeTeam :
+                                      match.awayScore > match.homeScore ? match.awayTeam : 'Draw';
+
+                        matchItem.innerHTML = `
+                            <div class="detail-item-header">
+                                <h3 class="detail-item-title">${match.homeTeam} vs ${match.awayTeam}</h3>
+                            </div>
+                            <div class="detail-item-meta">
+                                <span class="meta-badge">🏆 ${match.league}</span>
+                                <span class="meta-badge">📊 ${match.status}</span>
+                                ${winner !== 'Draw' ? `<span class="meta-badge" style="background-color: var(--success-color); color: white;">Winner: ${winner}</span>` : '<span class="meta-badge">Draw</span>'}
+                            </div>
+                            <div class="stats-grid">
+                                <div class="stat-box">
+                                    <div class="stat-box-label">${match.homeTeam}</div>
+                                    <div class="stat-box-value">${match.homeScore}</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-box-label">${match.awayTeam}</div>
+                                    <div class="stat-box-value">${match.awayScore}</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-box-label">Total Goals</div>
+                                    <div class="stat-box-value">${match.homeScore + match.awayScore}</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-box-label">Margin</div>
+                                    <div class="stat-box-value">${Math.abs(match.homeScore - match.awayScore)}</div>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(matchItem);
+                    });
+                }
+
+                // Render Premier League Standings
+                if (data.premierLeagueStandings) {
+                    const plSection = document.createElement('div');
+                    plSection.innerHTML = '<h3 class="section-title">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League Standings</h3>';
+                    container.appendChild(plSection);
+
+                    const plTable = document.createElement('table');
+                    plTable.className = 'standings-table';
+                    plTable.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Team</th>
+                                <th>P</th>
+                                <th>W</th>
+                                <th>D</th>
+                                <th>L</th>
+                                <th>Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.premierLeagueStandings.map(team => `
+                                <tr class="${team.team === 'Manchester United' ? 'team-highlight' : ''}">
+                                    <td><strong>${team.position}</strong></td>
+                                    <td>${team.team}</td>
+                                    <td>${team.played}</td>
+                                    <td>${team.won}</td>
+                                    <td>${team.drawn}</td>
+                                    <td>${team.lost}</td>
+                                    <td><strong>${team.points}</strong></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    `;
+                    container.appendChild(plTable);
+                }
+
+                // Render La Liga Standings
+                if (data.laLigaStandings) {
+                    const laLigaSection = document.createElement('div');
+                    laLigaSection.innerHTML = '<h3 class="section-title">🇪🇸 La Liga Standings</h3>';
+                    container.appendChild(laLigaSection);
+
+                    const laLigaTable = document.createElement('table');
+                    laLigaTable.className = 'standings-table';
+                    laLigaTable.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Team</th>
+                                <th>P</th>
+                                <th>W</th>
+                                <th>D</th>
+                                <th>L</th>
+                                <th>Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.laLigaStandings.map(team => `
+                                <tr class="${team.team === 'Real Madrid' ? 'team-highlight' : ''}">
+                                    <td><strong>${team.position}</strong></td>
+                                    <td>${team.team}</td>
+                                    <td>${team.played}</td>
+                                    <td>${team.won}</td>
+                                    <td>${team.drawn}</td>
+                                    <td>${team.lost}</td>
+                                    <td><strong>${team.points}</strong></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    `;
+                    container.appendChild(laLigaTable);
+                }
+
+                // Render Upcoming Fixtures
+                if (data.upcomingFixtures) {
+                    const fixturesSection = document.createElement('div');
+                    fixturesSection.innerHTML = '<h3 class="section-title">📅 Upcoming Fixtures</h3>';
+                    container.appendChild(fixturesSection);
+
+                    data.upcomingFixtures.forEach(fixture => {
+                        const fixtureCard = document.createElement('div');
+                        fixtureCard.className = 'fixture-card';
+                        fixtureCard.innerHTML = `
+                            <div class="fixture-teams">
+                                <span class="fixture-team">${fixture.homeTeam}</span>
+                                <span class="fixture-vs">vs</span>
+                                <span class="fixture-team">${fixture.awayTeam}</span>
+                            </div>
+                            <div class="fixture-time">
+                                <div><strong>${fixture.date}</strong></div>
+                                <div>${fixture.time}</div>
+                                <div style="font-size: 0.8rem; margin-top: 3px;">${fixture.league}</div>
+                            </div>
+                        `;
+                        container.appendChild(fixtureCard);
+                    });
+                }
+            } else {
+                // Basketball or other sports - render matches
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="no-items">No matches available</div>';
+                    return;
+                }
+
+                data.forEach(match => {
+                    const detailItem = document.createElement('div');
+                    detailItem.className = 'detail-item';
+
+                    const winner = match.homeScore > match.awayScore ? match.homeTeam :
+                                  match.awayScore > match.homeScore ? match.awayTeam : 'Draw';
+
+                    detailItem.innerHTML = `
+                        <div class="detail-item-header">
+                            <h3 class="detail-item-title">${match.homeTeam} vs ${match.awayTeam}</h3>
+                        </div>
+                        <div class="detail-item-meta">
+                            <span class="meta-badge">🏆 ${match.league}</span>
+                            <span class="meta-badge">📊 ${match.status}</span>
+                            ${winner !== 'Draw' ? `<span class="meta-badge" style="background-color: var(--success-color); color: white;">Winner: ${winner}</span>` : '<span class="meta-badge">Draw</span>'}
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <div class="stat-box-label">${match.homeTeam}</div>
+                                <div class="stat-box-value">${match.homeScore}</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-box-label">${match.awayTeam}</div>
+                                <div class="stat-box-value">${match.awayScore}</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-box-label">Total Points</div>
+                                <div class="stat-box-value">${match.homeScore + match.awayScore}</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-box-label">Margin</div>
+                                <div class="stat-box-value">${Math.abs(match.homeScore - match.awayScore)}</div>
+                            </div>
+                        </div>
+                    `;
+
+                    container.appendChild(detailItem);
+                });
+            }
+        }
+
+        function renderCryptoDetails(coins, container) {
+            if (!coins || coins.length === 0) {
+                container.innerHTML = '<div class="no-items">No cryptocurrency data available</div>';
+                return;
+            }
+
+            coins.forEach(coin => {
+                const detailItem = document.createElement('div');
+                detailItem.className = 'detail-item';
+
+                const isPositive = coin.change >= 0;
+                const changeColor = isPositive ? 'var(--success-color)' : 'var(--danger-color)';
+                const changeIcon = isPositive ? '📈' : '📉';
+
+                detailItem.innerHTML = `
+                    <div class="detail-item-header">
+                        <h3 class="detail-item-title">${coin.name}</h3>
+                    </div>
+                    <div class="detail-item-meta">
+                        <span class="meta-badge" style="background-color: ${changeColor}; color: white;">
+                            ${changeIcon} ${isPositive ? '+' : ''}${coin.change.toFixed(2)}% (24h)
+                        </span>
+                        <span class="meta-badge">💰 Current Price</span>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-box-label">Current Price (USD)</div>
+                            <div class="stat-box-value">$${coin.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-box-label">24h Change</div>
+                            <div class="stat-box-value" style="color: ${changeColor};">
+                                ${isPositive ? '+' : ''}${coin.change.toFixed(2)}%
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-box-label">Price Movement</div>
+                            <div class="stat-box-value">${isPositive ? '↗️ Up' : '↘️ Down'}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-box-label">Market Trend</div>
+                            <div class="stat-box-value">
+                                ${Math.abs(coin.change) > 5 ? (isPositive ? '🔥 Hot' : '❄️ Cold') : '➡️ Stable'}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-item-content" style="margin-top: 20px;">
+                        <p><strong>${coin.name}</strong> is currently trading at
+                        <strong>$${coin.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>,
+                        showing a ${isPositive ? 'positive' : 'negative'} movement of
+                        <strong style="color: ${changeColor};">${isPositive ? '+' : ''}${coin.change.toFixed(2)}%</strong>
+                        over the last 24 hours.</p>
+
+                        <p style="margin-top: 15px;">
+                        ${Math.abs(coin.change) > 5 ?
+                            `This represents ${isPositive ? 'significant gains' : 'notable losses'} and indicates ${isPositive ? 'strong buying pressure' : 'selling pressure'} in the market.` :
+                            'The price movement suggests relative market stability with moderate trading activity.'}
+                        </p>
+
+                        ${coin.name === 'Bitcoin' ?
+                            '<p style="margin-top: 15px;"><em>Bitcoin remains the largest cryptocurrency by market capitalization and is often considered a leading indicator for the broader crypto market.</em></p>' : ''}
+                        ${coin.name === 'Stellar' || coin.name === 'Ripple' ?
+                            '<p style="margin-top: 15px;"><em>This cryptocurrency focuses on facilitating fast, low-cost cross-border payments and is popular among financial institutions.</em></p>' : ''}
+                    </div>
+                `;
+
+                container.appendChild(detailItem);
+            });
+        }
+
+        function renderWritingDetails(data, container) {
+            if (!data || !data.recommendations) {
+                container.innerHTML = '<div class="no-items">No writing recommendations available</div>';
+                return;
+            }
+
+            // Add trend overview
+            const trendSection = document.createElement('div');
+            trendSection.className = 'detail-item';
+            trendSection.innerHTML = `
+                <div class="detail-item-header">
+                    <h3 class="detail-item-title">📊 This Week's Trend</h3>
+                </div>
+                <div class="detail-item-meta">
+                    <span class="meta-badge">📅 Week of ${data.weekOf}</span>
+                    <span class="meta-badge" style="background-color: var(--accent-color); color: white;">Hot Topics</span>
+                </div>
+                <div class="detail-item-content" style="margin-top: 15px;">
+                    <p><strong>${data.trend}</strong></p>
+                    <p style="margin-top: 15px; color: var(--text-secondary);">
+                        Based on LinkedIn discussions, industry blogs, and current events, here are ${data.recommendations.length} topics
+                        that will spark conversation and engagement this week.
+                    </p>
+                </div>
+            `;
+            container.appendChild(trendSection);
+
+            // Add section title
+            const sectionTitle = document.createElement('h3');
+            sectionTitle.className = 'section-title';
+            sectionTitle.textContent = '💡 Recommended Topics to Write About';
+            container.appendChild(sectionTitle);
+
+            // Render each recommendation
+            data.recommendations.forEach((rec, index) => {
+                const recItem = document.createElement('div');
+                recItem.className = 'detail-item';
+
+                // Determine engagement color
+                let engagementColor = 'var(--text-secondary)';
+                if (rec.engagement.includes('Very High')) {
+                    engagementColor = 'var(--success-color)';
+                } else if (rec.engagement.includes('High')) {
+                    engagementColor = 'var(--accent-color)';
+                }
+
+                recItem.innerHTML = `
+                    <div class="article-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        ${rec.image}
+                    </div>
+                    <div class="detail-item-header">
+                        <h3 class="detail-item-title">${index + 1}. ${rec.title}</h3>
+                    </div>
+                    <div class="detail-item-meta">
+                        <span class="meta-badge" style="background-color: ${engagementColor}; color: white;">
+                            ${rec.engagement}
+                        </span>
+                        <span class="meta-badge">⏱️ ${rec.readTime}</span>
+                        <span class="meta-badge">🎭 ${rec.tone}</span>
+                    </div>
+
+                    <div class="detail-item-content" style="margin-top: 20px;">
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: var(--accent-color);">Why This Topic?</strong>
+                            <p style="margin-top: 8px;">${rec.rationale}</p>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: var(--accent-color);">Your Angle</strong>
+                            <p style="margin-top: 8px;">${rec.angle}</p>
+                        </div>
+
+                        <div style="background-color: var(--bg-secondary); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent-color);">
+                            <strong>Suggested Tags:</strong>
+                            <div style="margin-top: 8px; color: var(--accent-color);">${rec.linkedinTags}</div>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(recItem);
+            });
+
+            // Add footer with writing tips
+            const footerSection = document.createElement('div');
+            footerSection.className = 'detail-item';
+            footerSection.style.borderLeft = '4px solid var(--warning-color)';
+            footerSection.innerHTML = `
+                <div class="detail-item-header">
+                    <h3 class="detail-item-title">💭 Your Writing Philosophy</h3>
+                </div>
+                <div class="detail-item-content">
+                    <ul style="list-style-position: inside; line-height: 2;">
+                        <li><strong>Be human, direct, and reflective</strong> - Write to spark conversation, not to preach</li>
+                        <li><strong>Offer clear points</strong> - Share relatable examples from real experience</li>
+                        <li><strong>Challenge assumptions</strong> - Focus on what doesn't work in practice</li>
+                        <li><strong>Stay slightly ahead</strong> - Timely and relevant, but not reactive or generic</li>
+                        <li><strong>Prioritize engagement</strong> - Choose topics that invite debate, reflection, or strong reactions on LinkedIn</li>
+                    </ul>
+                    <p style="margin-top: 20px; font-style: italic; color: var(--text-secondary);">
+                        Remember: You're writing about real-world experience, not textbook theory.
+                        Talk about what you've seen as a Project Owner, Project Manager, and leader inside complex organizations.
+                    </p>
+                </div>
+            `;
+            container.appendChild(footerSection);
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
