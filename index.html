@@ -868,13 +868,54 @@
 
     <script>
 
-        // RSS Feed Configuration
-        const RSS_FEEDS = {
-            ai: ['https://techcrunch.com/category/artificial-intelligence/feed/'],
-            pm: ['https://www.scrum.org/resources/blog/rss.xml'],
-            finance: ['https://www.coindesk.com/arc/outboundfeeds/rss/'],
-            news: ['http://feeds.reuters.com/reuters/topNews']
-        };
+        // NewsAPI Configuration
+        const NEWSAPI_KEY = 'edfab6f83d4f44b9886ca239aa44f6df';
+        const NEWSAPI_BASE = 'https://newsapi.org/v2';
+
+        async function fetchNewsAPI(query, count = 5, searchType = 'everything') {
+            try {
+                let url;
+                if (searchType === 'top-headlines') {
+                    url = `${NEWSAPI_BASE}/top-headlines?country=us&apiKey=${NEWSAPI_KEY}&pageSize=${count}`;
+                } else {
+                    url = `${NEWSAPI_BASE}/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&language=en&apiKey=${NEWSAPI_KEY}&pageSize=${count}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.status !== 'ok') {
+                    throw new Error('NewsAPI error: ' + (data.message || 'Unknown error'));
+                }
+
+                return data.articles.map(article => ({
+                    title: article.title,
+                    source: article.source.name,
+                    time: getTimeAgo(article.publishedAt),
+                    url: article.url,
+                    author: article.author || article.source.name,
+                    summary: article.description || 'Click to read the full article...',
+                    content: article.content || article.description || 'Click the link above to read the full article.',
+                    category: determineCategoryFromQuery(query),
+                    readTime: estimateReadTime(article.content || article.description),
+                    image: article.urlToImage || getCategoryIcon(article.title, article.description || ''),
+                    imageAlt: article.title,
+                    imageUrl: article.urlToImage
+                }));
+            } catch (error) {
+                console.error('NewsAPI fetch error:', error);
+                return [];
+            }
+        }
+
+        function determineCategoryFromQuery(query) {
+            const q = query.toLowerCase();
+            if (q.includes('ai') || q.includes('artificial')) return 'AI & Technology';
+            if (q.includes('agile') || q.includes('scrum')) return 'Agile';
+            if (q.includes('crypto') || q.includes('bitcoin')) return 'Cryptocurrency';
+            if (q.includes('real estate')) return 'Real Estate';
+            return 'News';
+        }
 
         // Helper functions for RSS
         function stripHtml(html) {
@@ -1939,7 +1980,7 @@
                 detailItem.className = 'detail-item';
 
                 detailItem.innerHTML = `
-                    ${article.image ? `<div class="article-image">${article.image}</div>` : ''}
+                    ${article.imageUrl ? `<div class="article-image" style="background-image: url(${article.imageUrl}); background-size: cover; background-position: center;">${article.image || ""}</div>` : article.image ? `<div class="article-image">${article.image}</div>` : ""}
                     <div class="detail-item-header">
                         <h3 class="detail-item-title">${article.title}</h3>
                     </div>
