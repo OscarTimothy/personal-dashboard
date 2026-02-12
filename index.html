@@ -867,6 +867,84 @@
     </div>
 
     <script>
+
+        // RSS Feed Configuration
+        const RSS_FEEDS = {
+            ai: ['https://techcrunch.com/category/artificial-intelligence/feed/'],
+            pm: ['https://www.scrum.org/resources/blog/rss.xml'],
+            finance: ['https://www.coindesk.com/arc/outboundfeeds/rss/'],
+            news: ['http://feeds.reuters.com/reuters/topNews']
+        };
+
+        // Helper functions for RSS
+        function stripHtml(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        function getTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)} hrs ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+            return date.toLocaleDateString();
+        }
+
+        function estimateReadTime(content) {
+            if (!content) return '3 min read';
+            const text = stripHtml(content);
+            const words = text.split(/\s+/).length;
+            const minutes = Math.max(1, Math.ceil(words / 200));
+            return `${minutes} min read`;
+        }
+
+        function getCategoryIcon(title, description) {
+            const text = (title + ' ' + description).toLowerCase();
+            if (text.includes('ai') || text.includes('artificial')) return '🤖';
+            if (text.includes('agile') || text.includes('scrum')) return '🎯';
+            if (text.includes('bitcoin') || text.includes('crypto')) return '₿';
+            if (text.includes('real estate')) return '🏘️';
+            return '📰';
+        }
+
+        async function fetchRSSFeed(feedUrl, count = 5) {
+            try {
+                const rss2jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=${count}`;
+                const response = await fetch(rss2jsonUrl);
+                const data = await response.json();
+                
+                if (data.status !== 'ok') throw new Error('RSS fetch failed');
+                
+                return data.items.map(item => {
+                    const summary = item.description ? stripHtml(item.description).substring(0, 200) + '...' : 'Click to read the full article...';
+                    const content = item.content || item.description || item.title;
+                    
+                    return {
+                        title: item.title,
+                        source: data.feed.title || 'News Source',
+                        time: getTimeAgo(item.pubDate),
+                        url: item.link,
+                        author: item.author || data.feed.title,
+                        summary: summary,
+                        content: stripHtml(content).substring(0, 800) + '...',
+                        category: item.categories && item.categories[0] ? item.categories[0] : 'News',
+                        readTime: estimateReadTime(content),
+                        image: getCategoryIcon(item.title, item.description || ''),
+                        imageAlt: item.title
+                    };
+                });
+            } catch (error) {
+                console.error('RSS fetch error for', feedUrl, error);
+                return [];
+            }
+        }
+
+
         // State Management
         const state = {
             theme: 'light',
@@ -1216,74 +1294,25 @@
 
         async function loadAINews() {
             try {
-                // Mock data - in production use NewsAPI or RSS feeds
-                state.data.ai = [
-                    {
-                        title: 'New AI Model Achieves Breakthrough in Natural Language Understanding',
-                        source: 'TechCrunch',
-                        time: '2 hours ago',
+                const articles = await fetchRSSFeed(RSS_FEEDS.ai[0], 5);
+                if (articles && articles.length > 0) {
+                    state.data.ai = articles;
+                } else {
+                    // Fallback to single demo article if RSS fails
+                    state.data.ai = [{
+                        title: 'RSS Feed Temporarily Unavailable',
+                        source: 'System',
+                        time: 'Now',
                         url: 'https://techcrunch.com/category/artificial-intelligence/',
-                        author: 'Sarah Johnson',
-                        summary: 'Researchers at a leading AI lab have developed a new language model that demonstrates unprecedented understanding of context and nuance in human communication.',
-                        content: 'In a groundbreaking development, researchers have unveiled an AI model that shows remarkable improvements in natural language understanding. The model, trained on diverse datasets, demonstrates superior performance in context comprehension, sentiment analysis, and generating human-like responses. Early tests show a 40% improvement over previous benchmarks. The research team believes this could revolutionize how AI systems interact with users across various applications, from customer service to educational tools. The model\'s ability to understand subtle contextual cues and maintain coherent long-form conversations marks a significant step forward in AI development.',
-                        category: 'AI Research',
-                        readTime: '5 min read',
+                        author: 'Dashboard',
+                        summary: 'Unable to load live feed. Click to visit TechCrunch AI.',
+                        content: 'The RSS feed is temporarily unavailable. Please try refreshing in a few minutes.',
+                        category: 'AI',
+                        readTime: '1 min',
                         image: '🤖',
-                        imageAlt: 'AI and Natural Language'
-                    },
-                    {
-                        title: 'Ethics Committee Releases Guidelines for AI Development',
-                        source: 'AI Ethics Journal',
-                        time: '5 hours ago',
-                        url: 'https://www.aiethicsjournal.org/',
-                        author: 'Dr. Michael Chen',
-                        summary: 'A comprehensive set of ethical guidelines aims to ensure responsible AI development and deployment across industries.',
-                        content: 'The International AI Ethics Committee has released a comprehensive framework for ethical AI development. The guidelines cover key areas including data privacy, algorithmic transparency, bias mitigation, and accountability. Major tech companies have pledged to adopt these standards. The framework emphasizes the importance of human oversight, regular audits, and diverse representation in AI development teams. It also addresses concerns about job displacement and recommends strategies for workforce transition. Industry leaders praise the guidelines as a crucial step toward building trust in AI systems while ensuring they benefit all of humanity.',
-                        category: 'AI Ethics',
-                        readTime: '7 min read',
-                        image: '⚖️',
-                        imageAlt: 'AI Ethics and Governance'
-                    },
-                    {
-                        title: 'Major Tech Company Announces Open-Source AI Framework',
-                        source: 'VentureBeat',
-                        time: '8 hours ago',
-                        url: 'https://venturebeat.com/category/ai/',
-                        author: 'Alex Rodriguez',
-                        summary: 'The new framework promises to democratize AI development and accelerate innovation across the industry.',
-                        content: 'A leading technology company has announced the release of its proprietary AI framework as open-source software. The framework, which has powered the company\'s products for years, includes tools for model training, deployment, and monitoring. By making it freely available, the company aims to accelerate AI innovation and make advanced AI capabilities accessible to smaller organizations and independent developers. The framework supports multiple programming languages and includes pre-trained models for common tasks. Industry analysts predict this move could significantly impact the AI ecosystem, fostering collaboration and innovation while potentially establishing new industry standards.',
-                        category: 'Technology',
-                        readTime: '6 min read',
-                        image: '💻',
-                        imageAlt: 'Open Source Technology'
-                    },
-                    {
-                        title: 'AI-Powered Healthcare Diagnostic Tool Shows 95% Accuracy Rate',
-                        source: 'Health Tech Today',
-                        time: '12 hours ago',
-                        url: 'https://healthtechmagazine.net/',
-                        author: 'Dr. Emily Watson',
-                        summary: 'New AI system demonstrates remarkable accuracy in early disease detection, potentially saving millions of lives.',
-                        content: 'A revolutionary AI diagnostic tool has achieved a 95% accuracy rate in early disease detection during clinical trials. The system analyzes medical imaging, patient history, and biomarkers to identify potential health issues before symptoms appear. Tested across multiple hospitals, the AI correctly identified early-stage conditions that human doctors might miss. The technology is particularly effective in detecting certain cancers, cardiovascular issues, and neurological disorders. Medical professionals emphasize that the AI is designed to assist, not replace, human doctors, serving as a powerful second opinion tool that could dramatically improve patient outcomes and reduce healthcare costs.',
-                        category: 'Healthcare',
-                        readTime: '8 min read',
-                        image: '🏥',
-                        imageAlt: 'Healthcare AI Technology'
-                    },
-                    {
-                        title: 'The Future of AI in Climate Change Solutions',
-                        source: 'Environmental Science Weekly',
-                        time: '1 day ago',
-                        url: 'https://www.scientificamerican.com/climate/',
-                        author: 'James Martinez',
-                        summary: 'Artificial intelligence is emerging as a powerful tool in the fight against climate change, from prediction models to renewable energy optimization.',
-                        content: 'Scientists are increasingly leveraging AI to address climate change challenges. Machine learning algorithms are improving climate prediction models, optimizing renewable energy systems, and identifying new materials for carbon capture. AI-powered satellite analysis helps monitor deforestation and ocean health in real-time. Smart grid systems use AI to balance energy supply and demand, reducing waste and emissions. Agricultural AI tools help farmers adapt to changing conditions while minimizing environmental impact. Researchers believe AI could be instrumental in achieving climate goals, though they caution that the technology itself must be developed sustainably to avoid contributing to the problem it aims to solve.',
-                        category: 'Environment',
-                        readTime: '10 min read',
-                        image: '🌍',
-                        imageAlt: 'Climate and Environment'
-                    }
-                ];
+                        imageAlt: 'AI News'
+                    }];
+                }
             } catch (error) {
                 console.error('AI News error:', error);
                 state.data.ai = { error: 'Failed to load AI news' };
@@ -1292,60 +1321,24 @@
 
         async function loadPMNews() {
             try {
-                state.data.pm = [
-                    {
-                        title: 'Agile Methodology Best Practices for 2026',
-                        source: 'Scrum.org',
-                        time: '1 day ago',
+                const articles = await fetchRSSFeed(RSS_FEEDS.pm[0], 5);
+                if (articles && articles.length > 0) {
+                    state.data.pm = articles;
+                } else {
+                    state.data.pm = [{
+                        title: 'RSS Feed Temporarily Unavailable',
+                        source: 'System',
+                        time: 'Now',
                         url: 'https://www.scrum.org/resources/blog/',
-                        author: 'Ken Schwaber',
-                        summary: 'Discover the latest best practices in Agile methodology that are shaping how teams deliver value in 2026.',
-                        content: 'As we progress through 2026, Agile methodology continues to evolve. This year\'s best practices emphasize continuous learning, adaptive planning, and customer collaboration more than ever. Teams are adopting hybrid approaches that blend Scrum and Kanban, creating flexible frameworks tailored to their unique contexts. Key trends include: increased focus on outcome over output metrics, integration of AI tools for sprint planning and retrospectives, and stronger emphasis on team wellness and sustainable pace. Organizations that embrace these practices are seeing 35% improvement in delivery times and 50% increase in team satisfaction. The article explores real-world case studies from companies that have successfully implemented these approaches, offering practical insights for teams at any stage of their Agile journey.',
+                        author: 'Dashboard',
+                        summary: 'Unable to load live feed. Click to visit Scrum.org.',
+                        content: 'The RSS feed is temporarily unavailable. Please try refreshing in a few minutes.',
                         category: 'Agile',
-                        readTime: '12 min read',
+                        readTime: '1 min',
                         image: '🎯',
-                        imageAlt: 'Agile Methodology'
-                    },
-                    {
-                        title: 'How Lean Six Sigma Transforms Project Delivery',
-                        source: 'PM Institute',
-                        time: '1 day ago',
-                        url: 'https://www.pmi.org/learning/library/',
-                        author: 'Dr. Maria Rodriguez',
-                        summary: 'Learn how combining Lean and Six Sigma methodologies creates powerful results in project management.',
-                        content: 'Lean Six Sigma has become a game-changer for organizations seeking to optimize their project delivery processes. By combining Lean\'s waste elimination principles with Six Sigma\'s data-driven approach to reducing defects, project managers are achieving unprecedented levels of efficiency and quality. Recent studies show that organizations implementing Lean Six Sigma see average cost reductions of 30% and quality improvements of 45%. The methodology\'s DMAIC framework (Define, Measure, Analyze, Improve, Control) provides a structured approach to problem-solving that works across industries. This article presents three detailed case studies: a manufacturing company that reduced production time by 40%, a healthcare provider that improved patient outcomes while cutting costs, and a software company that decreased bug rates by 60%. Each case demonstrates practical applications of Lean Six Sigma tools and techniques that readers can adapt to their own projects.',
-                        category: 'Lean Six Sigma',
-                        readTime: '15 min read',
-                        image: '📊',
-                        imageAlt: 'Lean Six Sigma'
-                    },
-                    {
-                        title: 'The Future of Hybrid Work in Project Management',
-                        source: 'PMI',
-                        time: '2 days ago',
-                        url: 'https://www.pmi.org/learning/thought-leadership/',
-                        author: 'Rachel Green',
-                        summary: 'Explore how hybrid work models are reshaping project management practices and team collaboration.',
-                        content: 'The hybrid work revolution has fundamentally changed how project managers lead their teams. With 73% of organizations now operating in hybrid mode, project managers must master new skills in virtual collaboration, asynchronous communication, and distributed team management. This comprehensive guide explores emerging best practices: using digital collaboration tools effectively, maintaining team cohesion across time zones, balancing synchronous and asynchronous work, and creating inclusive meeting cultures. Research shows that well-managed hybrid teams can be 20% more productive than traditional office-based teams, but only when leaders intentionally design their processes for flexibility. The article includes expert interviews with PMs from Fortune 500 companies, practical frameworks for hybrid sprint planning and daily standups, and strategies for maintaining team culture and psychological safety in distributed environments. Whether you\'re new to hybrid work or looking to optimize your current approach, this piece offers actionable insights backed by the latest research.',
-                        category: 'Project Management',
-                        readTime: '18 min read',
-                        image: '🏢',
-                        imageAlt: 'Hybrid Work'
-                    },
-                    {
-                        title: 'OKRs vs. KPIs: Choosing the Right Framework for Your Team',
-                        source: 'Agile Alliance',
-                        time: '3 days ago',
-                        url: 'https://www.agilealliance.org/resources/',
-                        author: 'David Kim',
-                        summary: 'A comprehensive comparison of OKRs and KPIs to help you select the best performance measurement framework.',
-                        content: 'Objectives and Key Results (OKRs) and Key Performance Indicators (KPIs) are both powerful tools, but they serve different purposes. This in-depth analysis helps leaders understand when to use each framework. OKRs excel at driving innovation and alignment around ambitious goals, while KPIs are better for monitoring ongoing operations and maintaining standards. The article presents a decision matrix based on team maturity, organizational culture, and strategic objectives. Real-world examples show how Google, Intel, and smaller startups have successfully implemented OKRs, while established enterprises use KPIs effectively. Many organizations find success in using both frameworks in tandem, with KPIs tracking operational health and OKRs driving strategic initiatives. The piece includes templates, implementation guides, and common pitfalls to avoid when adopting either framework.',
-                        category: 'Metrics',
-                        readTime: '14 min read',
-                        image: '📈',
-                        imageAlt: 'Metrics and KPIs'
-                    }
-                ];
+                        imageAlt: 'PM News'
+                    }];
+                }
             } catch (error) {
                 console.error('PM News error:', error);
                 state.data.pm = { error: 'Failed to load PM news' };
@@ -1354,60 +1347,24 @@
 
         async function loadFinanceNews() {
             try {
-                state.data.finance = [
-                    {
-                        title: 'Cleveland Real Estate Market Shows Strong Growth',
-                        source: 'Cleveland.com',
-                        time: '3 hours ago',
-                        url: 'https://www.cleveland.com/business/real-estate/',
-                        author: 'Jennifer Williams',
-                        summary: 'Cleveland\'s real estate market is experiencing robust growth with home values up 12% year-over-year.',
-                        content: 'Cleveland\'s real estate market is booming, with home values increasing 12% over the past year. The average home price in the metro area now stands at $245,000, up from $218,000 last year. Downtown areas are seeing the strongest growth, with some neighborhoods experiencing 18% appreciation. Factors driving the growth include: increased remote work flexibility attracting out-of-state buyers, major corporate expansions bringing new jobs, and ongoing revitalization projects in historic neighborhoods. First-time homebuyers are finding opportunities in up-and-coming areas like Ohio City and Tremont, while investors are focusing on multi-family properties in University Circle. Local real estate experts predict the market will remain strong through 2026, though they caution that rising interest rates may moderate the pace of growth. The article includes neighborhood-by-neighborhood analysis, investment hotspots, and advice for both buyers and sellers navigating this competitive market.',
-                        category: 'Real Estate',
-                        readTime: '10 min read',
-                        image: '🏘️',
-                        imageAlt: 'Real Estate Market'
-                    },
-                    {
-                        title: 'Bitcoin Reaches New Milestone Amid Market Rally',
-                        source: 'CoinDesk',
-                        time: '5 hours ago',
-                        url: 'https://www.coindesk.com/price/bitcoin/',
-                        author: 'Marcus Chen',
-                        summary: 'Bitcoin surpasses key resistance level as institutional adoption continues to accelerate.',
-                        content: 'Bitcoin has reached a significant milestone, breaking through the $75,000 barrier for the first time since early 2025. The rally is fueled by renewed institutional interest, with several major investment firms launching Bitcoin-focused products. Trading volume has increased 45% over the past week, indicating strong market participation. Analysts attribute the surge to multiple factors: clearer regulatory frameworks in major markets, inflation concerns driving investors toward digital assets, and technological improvements in the Bitcoin network increasing transaction efficiency. Ethereum and other major altcoins are also showing strength, with XRP up 15% and Stellar (XLM) gaining 12% in the past 24 hours. However, experts caution against excessive enthusiasm, noting that crypto markets remain volatile. The article provides technical analysis, discusses macroeconomic factors influencing crypto prices, and offers risk management strategies for investors at different experience levels.',
-                        category: 'Cryptocurrency',
-                        readTime: '8 min read',
-                        image: '₿',
-                        imageAlt: 'Bitcoin Cryptocurrency'
-                    },
-                    {
-                        title: '5 Investment Tips for Building Long-Term Wealth',
-                        source: 'Forbes',
-                        time: '1 day ago',
-                        url: 'https://www.forbes.com/advisor/investing/',
-                        author: 'Robert Foster',
-                        summary: 'Financial experts share proven strategies for building sustainable wealth through disciplined investing.',
-                        content: 'Building long-term wealth requires patience, discipline, and smart strategy. This comprehensive guide from leading financial advisors presents five essential principles: 1) Start Early - The power of compound interest cannot be overstated; even small monthly investments can grow substantially over decades. 2) Diversify Wisely - Spread investments across stocks, bonds, real estate, and alternative assets to manage risk. 3) Keep Costs Low - High fees erode returns; focus on low-cost index funds and ETFs. 4) Stay the Course - Market volatility is normal; avoid emotional decisions and stick to your long-term plan. 5) Continuously Educate Yourself - Markets evolve; successful investors never stop learning. The article includes specific portfolio allocation recommendations for different age groups, tax optimization strategies, and guidance on when to seek professional financial advice. Real-world examples show how these principles have helped ordinary individuals build seven-figure portfolios over 20-30 year periods. Whether you\'re just starting your investment journey or looking to optimize an existing portfolio, these time-tested strategies provide a roadmap to financial security.',
-                        category: 'Personal Finance',
-                        readTime: '16 min read',
-                        image: '💵',
-                        imageAlt: 'Wealth Building'
-                    },
-                    {
-                        title: 'XRP and Stellar See Surge in Enterprise Adoption',
-                        source: 'Crypto Weekly',
-                        time: '2 days ago',
-                        url: 'https://www.coindesk.com/business/',
-                        author: 'Lisa Anderson',
-                        summary: 'Major financial institutions are increasingly adopting XRP and Stellar for cross-border payments.',
-                        content: 'Enterprise adoption of Ripple\'s XRP and the Stellar network is accelerating, with over 50 financial institutions announcing new integrations this quarter. Both networks are gaining traction for cross-border payments due to their speed, low costs, and scalability. Traditional international transfers can take days and cost $25-50; XRP and Stellar transactions complete in seconds for fractions of a penny. Major banks in Asia, Europe, and Latin America are implementing these technologies to improve customer experience and reduce operational costs. Stellar, in particular, is seeing strong adoption for remittances and micropayments in developing markets. The networks\' focus on regulatory compliance and working within existing financial frameworks has helped win over traditional institutions that were initially skeptical of cryptocurrency. Market analysts predict this enterprise adoption will drive sustained growth in both XRP and XLM values, though they note regulatory developments remain a key factor to watch.',
-                        category: 'Cryptocurrency',
-                        readTime: '11 min read',
-                        image: '🌟',
-                        imageAlt: 'XRP and Stellar'
-                    }
-                ];
+                const articles = await fetchRSSFeed(RSS_FEEDS.finance[0], 5);
+                if (articles && articles.length > 0) {
+                    state.data.finance = articles;
+                } else {
+                    state.data.finance = [{
+                        title: 'RSS Feed Temporarily Unavailable',
+                        source: 'System',
+                        time: 'Now',
+                        url: 'https://www.coindesk.com/',
+                        author: 'Dashboard',
+                        summary: 'Unable to load live feed. Click to visit CoinDesk.',
+                        content: 'The RSS feed is temporarily unavailable. Please try refreshing in a few minutes.',
+                        category: 'Finance',
+                        readTime: '1 min',
+                        image: '💰',
+                        imageAlt: 'Finance News'
+                    }];
+                }
             } catch (error) {
                 console.error('Finance News error:', error);
                 state.data.finance = { error: 'Failed to load finance news' };
@@ -1575,60 +1532,24 @@
 
         async function loadBreakingNews() {
             try {
-                state.data.news = [
-                    {
-                        title: 'Major Policy Announcement Expected This Week',
-                        source: 'Reuters',
-                        time: '1 hour ago',
-                        url: 'https://www.reuters.com/technology/',
-                        author: 'Thomas Anderson',
-                        summary: 'Government officials signal significant policy changes coming in infrastructure and technology sectors.',
-                        content: 'Government sources indicate a major policy announcement is imminent, likely to be unveiled within the next 48-72 hours. While details remain confidential, insiders suggest the announcement will focus on infrastructure investment and technology sector regulation. The policy package is expected to include: significant funding for renewable energy infrastructure, updated guidelines for AI development and deployment, initiatives to expand broadband access in rural areas, and incentives for domestic semiconductor manufacturing. Political analysts believe the timing is strategic, aimed at addressing economic concerns while positioning the country competitively in emerging technologies. Industry leaders have been briefed in private sessions and are reportedly supportive of the direction. The announcement could have far-reaching implications for investors, with potentially significant impacts on technology stocks, clean energy companies, and infrastructure contractors. Markets are watching closely, with technology indices showing volatility in anticipation of the news.',
-                        category: 'Politics',
-                        readTime: '7 min read',
-                        image: '🏛️',
-                        imageAlt: 'Government Policy'
-                    },
-                    {
-                        title: 'Technology Sector Sees Record Investment',
-                        source: 'AP News',
-                        time: '3 hours ago',
-                        url: 'https://techcrunch.com/category/venture/',
-                        author: 'Patricia Lee',
-                        summary: 'Venture capital funding in technology reaches all-time high, driven by AI and clean tech investments.',
-                        content: 'The technology sector attracted a record $180 billion in venture capital funding in the first quarter of 2026, surpassing previous records by 25%. Artificial intelligence companies captured 40% of total investment, with particular interest in enterprise AI applications, healthcare AI, and AI security tools. Clean technology is the second-hottest sector, receiving $32 billion as investors bet on solutions to climate change. Notable mega-rounds include a $2.5 billion investment in an AI chip manufacturer and a $1.8 billion round for a carbon capture technology company. Investor enthusiasm reflects both the transformative potential of these technologies and concerns about missing out on the next wave of innovation. However, some analysts warn that valuations may be stretched, drawing comparisons to previous tech bubbles. The article examines current market dynamics, interviews leading venture capitalists about their investment theses, and analyzes which subsectors are likely to see continued strong funding versus those that may be approaching peak hype.',
-                        category: 'Business',
-                        readTime: '12 min read',
-                        image: '💼',
-                        imageAlt: 'Tech Investment'
-                    },
-                    {
-                        title: 'Global Summit Addresses Climate Initiatives',
-                        source: 'BBC',
-                        time: '6 hours ago',
-                        url: 'https://www.bbc.com/news/science-environment/',
-                        author: 'James Mitchell',
-                        summary: 'World leaders convene to accelerate climate action with new commitments and collaborative frameworks.',
-                        content: 'Representatives from 170 countries gathered at the Global Climate Summit to forge new agreements on emissions reduction and climate adaptation. The summit produced several significant outcomes: a collective commitment to achieve net-zero emissions by 2050, establishment of a $100 billion fund to help developing nations transition to clean energy, and new technology-sharing agreements to accelerate innovation. Breakthrough announcements include major economies pledging to phase out coal power by 2035 and a coalition of nations committing to protect 30% of ocean areas by 2030. Private sector participation was unprecedented, with companies representing $15 trillion in market capitalization pledging to align their operations with 1.5°C warming scenarios. Youth activists and indigenous leaders played prominent roles, emphasizing the need for immediate action and equitable solutions. While environmental groups praised the commitments as historic, some critics argue the timelines aren\'t aggressive enough given the urgency of the climate crisis. The article provides detailed analysis of key agreements, evaluates their potential impact, and examines the mechanisms for ensuring accountability.',
-                        category: 'Environment',
-                        readTime: '14 min read',
-                        image: '🌱',
-                        imageAlt: 'Climate Action'
-                    },
-                    {
-                        title: 'Breakthrough in Medical Research Offers Hope for Alzheimer\'s Patients',
-                        source: 'Science Daily',
-                        time: '8 hours ago',
-                        url: 'https://www.sciencedaily.com/news/health_medicine/',
-                        author: 'Dr. Susan Palmer',
-                        summary: 'New treatment shows promising results in slowing cognitive decline in early-stage Alzheimer\'s patients.',
-                        content: 'Researchers have announced promising results from a Phase III clinical trial of a new Alzheimer\'s treatment. The therapy, which combines a novel antibody with targeted brain stimulation, showed a 45% reduction in cognitive decline among early-stage patients over an 18-month period. This represents the most significant advance in Alzheimer\'s treatment in over a decade. The treatment works by clearing amyloid plaques from the brain while simultaneously promoting neural plasticity through non-invasive electrical stimulation. Of 2,400 trial participants, those receiving the combination therapy maintained cognitive function significantly better than the placebo group, with some patients showing slight improvements in memory and executive function. Side effects were generally mild and manageable. The research team emphasizes that this is not a cure, but it offers hope for slowing disease progression and maintaining quality of life longer. If approved by regulatory agencies, the treatment could be available to patients within 12-18 months. The discovery has major implications for the millions of families affected by Alzheimer\'s worldwide and could reshape the landscape of neurodegenerative disease treatment.',
-                        category: 'Health',
-                        readTime: '10 min read',
-                        image: '🧠',
-                        imageAlt: 'Medical Research'
-                    }
-                ];
+                const articles = await fetchRSSFeed(RSS_FEEDS.news[0], 5);
+                if (articles && articles.length > 0) {
+                    state.data.news = articles;
+                } else {
+                    state.data.news = [{
+                        title: 'RSS Feed Temporarily Unavailable',
+                        source: 'System',
+                        time: 'Now',
+                        url: 'https://www.reuters.com/',
+                        author: 'Dashboard',
+                        summary: 'Unable to load live feed. Click to visit Reuters.',
+                        content: 'The RSS feed is temporarily unavailable. Please try refreshing in a few minutes.',
+                        category: 'News',
+                        readTime: '1 min',
+                        image: '📰',
+                        imageAlt: 'Breaking News'
+                    }];
+                }
             } catch (error) {
                 console.error('Breaking News error:', error);
                 state.data.news = { error: 'Failed to load news' };
